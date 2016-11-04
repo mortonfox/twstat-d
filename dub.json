@@ -1,0 +1,9 @@
+{
+	"name": "twstat-d",
+	"authors": [
+		"Morton Fox"
+	],
+	"description": "Generate Twitter stats from a downloaded Twitter archive",
+	"copyright": "",
+	"license": "GPL3"
+}
