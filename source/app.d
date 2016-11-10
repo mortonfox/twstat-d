@@ -5,6 +5,7 @@ import std.datetime;
 import std.file;
 import std.format;
 import std.getopt;
+import std.range;
 import std.stdio;
 import std.zip;
 import core.stdc.stdlib : exit;
@@ -68,15 +69,23 @@ struct PeriodInfo {
 
 class TweetStats {
     int[string] count_by_month;
-    PeriodInfo[string] count_defs;
+    PeriodInfo[] count_defs;
+
+    int[7][2] count_by_dow;
 
     // Archive entries before this point all have 00:00:00 as the time, so don't
     // include them in the by-hour chart.
     DateTime zero_time_cutoff;
 
+    DateTime oldest_tstamp;
+    DateTime newest_tstamp;
+    bool first_record = true;
+
     this() {
-	this.count_defs["alltime"] = PeriodInfo("all time", 0);
-	this.count_defs["last30"] = PeriodInfo("last 30 days", 30);
+	this.count_defs = [
+	    PeriodInfo("all time", 0),
+	    PeriodInfo("last 30 days", 30)
+	];
 
 	auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
 	this.zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
@@ -85,16 +94,57 @@ class TweetStats {
     void process_record(TweetRecord record) {
 	auto tstamp = parse_tstamp(record.timestamp);
 
-	auto month_text = format("%04d-%02d", tstamp.year, tstamp.month);
+	// Save the newest timestamp since the last N days stat refers to the N
+	// days preceding this timestamp, not the N days preceding the current
+	// time. This is because omeone may be running the script on a Twitter
+	// archive that was downloaded long ago. The following code assumes
+	// that tweets.csv is ordered from newest to oldest.
+	if (this.first_record) {
+	    this.first_record = false;
 
+	    this.newest_tstamp = tstamp;
+
+	    foreach (ref period; this.count_defs) {
+		if (period.days > 0) period.cutoff = this.newest_tstamp - days(period.days);
+	    }
+	}
+
+	this.oldest_tstamp = tstamp;
+
+	auto month_text = format("%04d-%02d", tstamp.year, tstamp.month);
 	this.count_by_month[month_text] ++;
+
+	foreach (i, period; this.count_defs) {
+	    // writeln(tstamp, " < ", period.cutoff, " = ", tstamp < period.cutoff);
+	    if (tstamp < period.cutoff) continue;
+
+	    count_by_dow[i][tstamp.dayOfWeek()] ++;
+	}
 
 	// writeln("Tweet: ", record.text, " via ", record.source, " at ", tstamp, " ", month_text);
     }
 
+    void report_title(string title) {
+	writeln();
+	writeln(title);
+	writeln(repeat('=', title.length));
+    }
+
     void report_text() {
+	report_title("Tweets by Month");
 	foreach (month_str; sort(this.count_by_month.keys)) {
 	    writeln(month_str, ": ", this.count_by_month[month_str]);
+	}
+
+	auto downames = [
+	    "Sunday", "Monday", "Tuesday", "Wednesday", 
+	    "Thursday", "Friday", "Saturday"
+	];
+
+	foreach (i, period; this.count_defs) {
+	    report_title(text("Tweets by Day of Week (", period.title, ")"));
+	    foreach (j, count; count_by_dow[i])
+		writeln(downames[j], ": ", count);
 	}
     }
 }
