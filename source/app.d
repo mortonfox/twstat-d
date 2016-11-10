@@ -54,8 +54,6 @@ DateTime parse_tstamp(string timestamp) {
     return cast(DateTime) tsystime.toLocalTime();
 }
 
-int[string] count_by_month;
-
 struct PeriodInfo {
     string title;
     int days;
@@ -68,33 +66,36 @@ struct PeriodInfo {
     }
 }
 
-PeriodInfo[string] count_defs;
+class TweetStats {
+    int[string] count_by_month;
+    PeriodInfo[string] count_defs;
 
-// Archive entries before this point all have 00:00:00 as the time, so don't
-// include them in the by-hour chart.
-DateTime zero_time_cutoff;
+    // Archive entries before this point all have 00:00:00 as the time, so don't
+    // include them in the by-hour chart.
+    DateTime zero_time_cutoff;
 
-void init_data() {
-    count_defs["alltime"] = PeriodInfo("all time", 0);
-    count_defs["last30"] = PeriodInfo("last 30 days", 30);
+    this() {
+	this.count_defs["alltime"] = PeriodInfo("all time", 0);
+	this.count_defs["last30"] = PeriodInfo("last 30 days", 30);
 
-    auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
-    zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
-}
+	auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
+	this.zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
+    }
 
-void process_record(TweetRecord record) {
-    auto tstamp = parse_tstamp(record.timestamp);
+    void process_record(TweetRecord record) {
+	auto tstamp = parse_tstamp(record.timestamp);
 
-    auto month_text = format("%04d-%02d", tstamp.year, tstamp.month);
+	auto month_text = format("%04d-%02d", tstamp.year, tstamp.month);
 
-    count_by_month[month_text] ++;
+	this.count_by_month[month_text] ++;
 
-    // writeln("Tweet: ", record.text, " via ", record.source, " at ", tstamp, " ", month_text);
-}
+	// writeln("Tweet: ", record.text, " via ", record.source, " at ", tstamp, " ", month_text);
+    }
 
-void report_text() {
-    foreach (month_str; sort(count_by_month.keys)) {
-	writeln(month_str, ": ", count_by_month[month_str]);
+    void report_text() {
+	foreach (month_str; sort(this.count_by_month.keys)) {
+	    writeln(month_str, ": ", this.count_by_month[month_str]);
+	}
     }
 }
 
@@ -111,13 +112,13 @@ void process_zipfile(string infile) {
 	auto text = cast(char[]) zip.expand(zipdir["tweets.csv"]);
 	auto records = csvReader!TweetRecord(text, ["timestamp", "source", "text"]);
 
-	init_data();
+	auto tweetstats = new TweetStats;
 
 	foreach (record; records) {
-	    process_record(record);
+	    tweetstats.process_record(record);
 	}
 
-	report_text();
+	tweetstats.report_text();
     }
     catch (Exception e) {
 	stderr.writeln("Error processing ZIP file: ", e.msg);
