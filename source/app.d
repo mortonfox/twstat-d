@@ -6,6 +6,7 @@ import std.file;
 import std.format;
 import std.getopt;
 import std.range;
+import std.regex;
 import std.stdio;
 import std.zip;
 import core.stdc.stdlib : exit;
@@ -63,7 +64,7 @@ struct PeriodInfo {
     this(string title, int days) {
 	this.title = title;
 	this.days = days;
-	this.cutoff = DateTime(1980, 1, 1);
+	cutoff = DateTime(1980, 1, 1);
     }
 }
 
@@ -73,6 +74,7 @@ class TweetStats {
 
     int[7][2] count_by_dow;
     int[24][2] count_by_hour;
+    int[string][2] count_by_mentions;
 
     // Archive entries before this point all have 00:00:00 as the time, so don't
     // include them in the by-hour chart.
@@ -82,14 +84,16 @@ class TweetStats {
     DateTime newest_tstamp;
     bool first_record = true;
 
+    static mentionRegex = ctRegex!(`\B@([A-Za-z0-9_]+)`);
+
     this() {
-	this.count_defs = [
+	count_defs = [
 	    PeriodInfo("all time", 0),
 	    PeriodInfo("last 30 days", 30)
 	];
 
 	auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
-	this.zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
+	zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
     }
 
     void process_record(TweetRecord record) {
@@ -100,29 +104,33 @@ class TweetStats {
 	// time. This is because omeone may be running the script on a Twitter
 	// archive that was downloaded long ago. The following code assumes
 	// that tweets.csv is ordered from newest to oldest.
-	if (this.first_record) {
-	    this.first_record = false;
+	if (first_record) {
+	    first_record = false;
 
-	    this.newest_tstamp = tstamp;
+	    newest_tstamp = tstamp;
 
-	    foreach (ref period; this.count_defs) {
-		if (period.days > 0) period.cutoff = this.newest_tstamp - days(period.days);
+	    foreach (ref period; count_defs) {
+		if (period.days > 0) period.cutoff = newest_tstamp - days(period.days);
 	    }
 	}
 
-	this.oldest_tstamp = tstamp;
+	oldest_tstamp = tstamp;
 
 	auto month_text = format("%04d-%02d", tstamp.year, tstamp.month);
-	this.count_by_month[month_text] ++;
+	count_by_month[month_text] ++;
 
-	foreach (i, period; this.count_defs) {
-	    // writeln(tstamp, " < ", period.cutoff, " = ", tstamp < period.cutoff);
+	auto mentions = matchAll(record.text, mentionRegex);
+
+	foreach (i, period; count_defs) {
 	    if (tstamp < period.cutoff) continue;
 
 	    count_by_dow[i][tstamp.dayOfWeek()] ++;
 
-	    if (tstamp >= this.zero_time_cutoff)
+	    if (tstamp >= zero_time_cutoff)
 		count_by_hour[i][tstamp.hour] ++;
+
+	    foreach (mention; mentions)
+		count_by_mentions[i][mention[1]] ++;
 	}
 
 	// writeln("Tweet: ", record.text, " via ", record.source, " at ", tstamp, " ", month_text);
@@ -136,25 +144,30 @@ class TweetStats {
 
     void report_text() {
 	report_title("Tweets by Month");
-	foreach (month_str; sort(this.count_by_month.keys)) {
-	    writeln(month_str, ": ", this.count_by_month[month_str]);
-	}
+	foreach (month_str; sort(count_by_month.keys))
+	    writeln(month_str, ": ", count_by_month[month_str]);
 
 	auto downames = [
 	    "Sunday", "Monday", "Tuesday", "Wednesday", 
 	    "Thursday", "Friday", "Saturday"
 	];
 
-	foreach (i, period; this.count_defs) {
+	foreach (i, period; count_defs) {
 	    report_title(text("Tweets by Day of Week (", period.title, ")"));
 	    foreach (j, count; count_by_dow[i])
 		writeln(downames[j], ": ", count);
 	}
 
-	foreach (i, period; this.count_defs) {
+	foreach (i, period; count_defs) {
 	    report_title(text("Tweets by Hour (", period.title, ")"));
 	    foreach (j, count; count_by_hour[i])
 		writeln(j, ": ", count);
+	}
+
+	foreach (i, period; count_defs) {
+	    report_title(text("Top Mentions (", period.title, ")"));
+	    foreach (user; sort!((a, b) => count_by_mentions[i][a] > count_by_mentions[i][b])(count_by_mentions[i].keys)[0..10])
+		writeln(user, ": ", count_by_mentions[i][user]);
 	}
     }
 }
