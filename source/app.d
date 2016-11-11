@@ -72,6 +72,7 @@ class TweetStats {
     PeriodInfo[] count_defs;
 
     int[7][2] count_by_dow;
+    int[24][2] count_by_hour;
 
     // Archive entries before this point all have 00:00:00 as the time, so don't
     // include them in the by-hour chart.
@@ -119,6 +120,9 @@ class TweetStats {
 	    if (tstamp < period.cutoff) continue;
 
 	    count_by_dow[i][tstamp.dayOfWeek()] ++;
+
+	    if (tstamp >= this.zero_time_cutoff)
+		count_by_hour[i][tstamp.hour] ++;
 	}
 
 	// writeln("Tweet: ", record.text, " via ", record.source, " at ", tstamp, " ", month_text);
@@ -145,6 +149,12 @@ class TweetStats {
 	    report_title(text("Tweets by Day of Week (", period.title, ")"));
 	    foreach (j, count; count_by_dow[i])
 		writeln(downames[j], ": ", count);
+	}
+
+	foreach (i, period; this.count_defs) {
+	    report_title(text("Tweets by Hour (", period.title, ")"));
+	    foreach (j, count; count_by_hour[i])
+		writeln(j, ": ", count);
 	}
     }
 }
