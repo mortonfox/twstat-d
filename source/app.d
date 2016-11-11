@@ -75,6 +75,7 @@ class TweetStats {
     int[7][2] count_by_dow;
     int[24][2] count_by_hour;
     int[string][2] count_by_mentions;
+    int[string][2] count_by_source;
 
     // Archive entries before this point all have 00:00:00 as the time, so don't
     // include them in the by-hour chart.
@@ -84,7 +85,8 @@ class TweetStats {
     DateTime newest_tstamp;
     bool first_record = true;
 
-    static mentionRegex = ctRegex!(`\B@([A-Za-z0-9_]+)`);
+    static mention_regex = ctRegex!(`\B@([A-Za-z0-9_]+)`);
+    static strip_a_tag_regex = ctRegex!(`<a[^>]*>(.*)</a>`);
 
     this() {
 	count_defs = [
@@ -109,9 +111,8 @@ class TweetStats {
 
 	    newest_tstamp = tstamp;
 
-	    foreach (ref period; count_defs) {
+	    foreach (ref period; count_defs)
 		if (period.days > 0) period.cutoff = newest_tstamp - days(period.days);
-	    }
 	}
 
 	oldest_tstamp = tstamp;
@@ -119,7 +120,9 @@ class TweetStats {
 	auto month_text = format("%04d-%02d", tstamp.year, tstamp.month);
 	count_by_month[month_text] ++;
 
-	auto mentions = matchAll(record.text, mentionRegex);
+	auto mentions = matchAll(record.text, mention_regex);
+
+	auto source = replaceAll(record.source, strip_a_tag_regex, "$1");
 
 	foreach (i, period; count_defs) {
 	    if (tstamp < period.cutoff) continue;
@@ -131,6 +134,8 @@ class TweetStats {
 
 	    foreach (mention; mentions)
 		count_by_mentions[i][mention[1]] ++;
+
+	    count_by_source[i][source] ++;
 	}
 
 	// writeln("Tweet: ", record.text, " via ", record.source, " at ", tstamp, " ", month_text);
@@ -166,8 +171,20 @@ class TweetStats {
 
 	foreach (i, period; count_defs) {
 	    report_title(text("Top Mentions (", period.title, ")"));
-	    foreach (user; sort!((a, b) => count_by_mentions[i][a] > count_by_mentions[i][b])(count_by_mentions[i].keys)[0..10])
+	    foreach (user;
+		    count_by_mentions[i].keys
+		    .sort!((a, b) => count_by_mentions[i][a] > count_by_mentions[i][b])
+		    .take(10))
 		writeln(user, ": ", count_by_mentions[i][user]);
+	}
+
+	foreach (i, period; count_defs) {
+	    report_title(text("Top Clients (", period.title, ")"));
+	    foreach (user;
+		    count_by_source[i].keys
+		    .sort!((a, b) => count_by_source[i][a] > count_by_source[i][b])
+		    .take(10))
+		writeln(user, ": ", count_by_source[i][user]);
 	}
     }
 }
