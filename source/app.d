@@ -1,3 +1,4 @@
+import std.algorithm.iteration;
 import std.algorithm.sorting;
 import std.conv;
 import std.csv;
@@ -8,6 +9,8 @@ import std.getopt;
 import std.range;
 import std.regex;
 import std.stdio;
+import std.string;
+import std.uni;
 import std.zip;
 import core.stdc.stdlib : exit;
 
@@ -76,6 +79,7 @@ class TweetStats {
     int[24][2] count_by_hour;
     int[string][2] count_by_mentions;
     int[string][2] count_by_source;
+    int[string][2] count_by_words;
 
     // Archive entries before this point all have 00:00:00 as the time, so don't
     // include them in the by-hour chart.
@@ -87,6 +91,9 @@ class TweetStats {
 
     static mention_regex = ctRegex!(`\B@([A-Za-z0-9_]+)`);
     static strip_a_tag_regex = ctRegex!(`<a[^>]*>(.*)</a>`);
+    static word_split_regex = ctRegex!(`[^a-z0-9_']+`);
+
+    int[string] common_words;
 
     this() {
 	count_defs = [
@@ -96,6 +103,20 @@ class TweetStats {
 
 	auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
 	zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
+
+	common_words = [
+	    "the" : 1, "and" : 1, "you" : 1, "that" : 1,
+	    "was" : 1, "for" : 1, "are" : 1, "with" : 1, "his" : 1, "they" : 1,
+	    "this" : 1, "have" : 1, "from" : 1, "one" : 1, "had" : 1, "word" : 1,
+	    "but" : 1, "not" : 1, "what" : 1, "all" : 1, "were" : 1, "when" : 1, "your" : 1, "can" : 1, "said" : 1,
+	    "there" : 1, "use" : 1, "each" : 1, "which" : 1, "she" : 1, "how" : 1, "their" : 1,
+	    "will" : 1, "other" : 1, "about" : 1, "out" : 1, "many" : 1, "then" : 1, "them" : 1, "these" : 1,
+	    "some" : 1, "her" : 1, "would" : 1, "make" : 1, "like" : 1, "him" : 1, "into" : 1, "time" : 1, "has" : 1, "look" : 1,
+	    "two" : 1, "more" : 1, "write" : 1, "see" : 1, "number" : 1, "way" : 1, "could" : 1, "people" : 1,
+	    "than" : 1, "first" : 1, "water" : 1, "been" : 1, "call" : 1, "who" : 1, "oil" : 1, "its" : 1, "now" : 1,
+	    "find" : 1, "long" : 1, "down" : 1, "day" : 1, "did" : 1, "get" : 1, "come" : 1, "made" : 1, "may" : 1, "part" : 1,
+	    "http" : 1, "com" : 1, "net" : 1, "org" : 1, "www" : 1, "https" : 1
+	];
     }
 
     void process_record(TweetRecord record) {
@@ -124,6 +145,13 @@ class TweetStats {
 
 	auto source = replaceAll(record.source, strip_a_tag_regex, "$1");
 
+	// Convert unicode right quote to ASCII quote.
+	// Filter out common words and short words.
+	auto words = record.text
+	    .tr("\u2019", "'")
+	    .toLower.split(word_split_regex)
+	    .filter!(w => w.length >= 3 && w !in common_words);
+
 	foreach (i, period; count_defs) {
 	    if (tstamp < period.cutoff) continue;
 
@@ -136,6 +164,9 @@ class TweetStats {
 		count_by_mentions[i][mention[1]] ++;
 
 	    count_by_source[i][source] ++;
+
+	    foreach (word; words)
+		count_by_words[i][word] ++;
 	}
 
 	// writeln("Tweet: ", record.text, " via ", record.source, " at ", tstamp, " ", month_text);
@@ -180,11 +211,20 @@ class TweetStats {
 
 	foreach (i, period; count_defs) {
 	    report_title(text("Top Clients (", period.title, ")"));
-	    foreach (user;
+	    foreach (source;
 		    count_by_source[i].keys
 		    .sort!((a, b) => count_by_source[i][a] > count_by_source[i][b])
 		    .take(10))
-		writeln(user, ": ", count_by_source[i][user]);
+		writeln(source, ": ", count_by_source[i][source]);
+	}
+
+	foreach (i, period; count_defs) {
+	    report_title(text("Top Words (", period.title, ")"));
+	    foreach (word;
+		    count_by_words[i].keys
+		    .sort!((a, b) => count_by_words[i][a] > count_by_words[i][b])
+		    .take(20))
+		writeln(word, ": ", count_by_words[i][word]);
 	}
     }
 }
