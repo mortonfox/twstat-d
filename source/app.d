@@ -53,7 +53,8 @@ struct TweetRecord {
 DateTime parse_tstamp(string timestamp) {
     int year, mon, day, hour, min, sec;
     auto numread = formattedRead(timestamp, "%d-%d-%d %d:%d:%d", &year, &mon, &day, &hour, &min, &sec);
-    if (numread < 6) throw new Exception(text("Unrecognized timestamp format: ", timestamp));
+    if (numread < 6)
+	throw new Exception(text("Unrecognized timestamp format: ", timestamp));
 
     auto tsystime = new SysTime(DateTime(year, mon, day, hour, min, sec), UTC());
     return cast(DateTime) tsystime.toLocalTime();
@@ -133,7 +134,8 @@ class TweetStats {
 	    newest_tstamp = tstamp;
 
 	    foreach (ref period; count_defs)
-		if (period.days > 0) period.cutoff = newest_tstamp - days(period.days);
+		if (period.days)
+		    period.cutoff = newest_tstamp - days(period.days);
 	}
 
 	oldest_tstamp = tstamp;
@@ -168,20 +170,18 @@ class TweetStats {
 	    foreach (word; words)
 		count_by_words[i][word] ++;
 	}
-
-	// writeln("Tweet: ", record.text, " via ", record.source, " at ", tstamp, " ", month_text);
     }
 
-    void report_title(string title) {
-	writeln();
-	writeln(title);
-	writeln(repeat('=', title.length));
-    }
+    void report_text(ref File f) {
+	void report_title(string title) {
+	    f.writeln();
+	    f.writeln(title);
+	    f.writeln(repeat('=', title.length));
+	}
 
-    void report_text() {
 	report_title("Tweets by Month");
 	foreach (month_str; sort(count_by_month.keys))
-	    writeln(month_str, ": ", count_by_month[month_str]);
+	    f.writeln(month_str, ": ", count_by_month[month_str]);
 
 	auto downames = [
 	    "Sunday", "Monday", "Tuesday", "Wednesday", 
@@ -191,13 +191,13 @@ class TweetStats {
 	foreach (i, period; count_defs) {
 	    report_title(text("Tweets by Day of Week (", period.title, ")"));
 	    foreach (j, count; count_by_dow[i])
-		writeln(downames[j], ": ", count);
+		f.writeln(downames[j], ": ", count);
 	}
 
 	foreach (i, period; count_defs) {
 	    report_title(text("Tweets by Hour (", period.title, ")"));
 	    foreach (j, count; count_by_hour[i])
-		writeln(j, ": ", count);
+		f.writeln(j, ": ", count);
 	}
 
 	foreach (i, period; count_defs) {
@@ -206,7 +206,7 @@ class TweetStats {
 		    count_by_mentions[i].keys
 		    .sort!((a, b) => count_by_mentions[i][a] > count_by_mentions[i][b])
 		    .take(10))
-		writeln(user, ": ", count_by_mentions[i][user]);
+		f.writeln(user, ": ", count_by_mentions[i][user]);
 	}
 
 	foreach (i, period; count_defs) {
@@ -215,7 +215,7 @@ class TweetStats {
 		    count_by_source[i].keys
 		    .sort!((a, b) => count_by_source[i][a] > count_by_source[i][b])
 		    .take(10))
-		writeln(source, ": ", count_by_source[i][source]);
+		f.writeln(source, ": ", count_by_source[i][source]);
 	}
 
 	foreach (i, period; count_defs) {
@@ -224,12 +224,12 @@ class TweetStats {
 		    count_by_words[i].keys
 		    .sort!((a, b) => count_by_words[i][a] > count_by_words[i][b])
 		    .take(20))
-		writeln(word, ": ", count_by_words[i][word]);
+		f.writeln(word, ": ", count_by_words[i][word]);
 	}
     }
 }
 
-void process_zipfile(string infile) {
+TweetStats process_zipfile(string infile) {
     const tweets_file = "tweets.csv";
 
     try {
@@ -244,15 +244,15 @@ void process_zipfile(string infile) {
 
 	auto tweetstats = new TweetStats;
 
-	foreach (record; records) {
+	foreach (record; records)
 	    tweetstats.process_record(record);
-	}
 
-	tweetstats.report_text();
+	return tweetstats;
     }
     catch (Exception e) {
 	stderr.writeln("Error processing ZIP file: ", e.msg);
 	exit(2);
+	assert(0);
     }
 }
 
@@ -263,8 +263,8 @@ void main(string[] args)
 
     parse_cmdline(args, infile, outfile);
 
-    writeln("Input file: ", infile);
-    writeln("Output file: ", outfile);
+    auto tweetstats = process_zipfile(infile);
 
-    process_zipfile(infile);
+    auto outf = File(outfile, "w");
+    tweetstats.report_text(outf);
 }
