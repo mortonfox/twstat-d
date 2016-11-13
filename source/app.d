@@ -236,7 +236,7 @@ TweetStats process_zipfile(string infile) {
 	auto zip = new ZipArchive(read(infile));
 	auto zipdir = zip.directory;
 
-	if (!(tweets_file in zipdir))
+	if (tweets_file !in zipdir)
 	    throw new Exception(text(tweets_file, " was not found in ZIP file ", infile));
 
 	auto text = cast(char[]) zip.expand(zipdir["tweets.csv"]);
