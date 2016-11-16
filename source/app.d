@@ -14,8 +14,17 @@ import std.uni;
 import std.zip;
 import core.stdc.stdlib : exit;
 
-void parse_cmdline(string[] args, out string infile, out string outfile) {
-    const helpmsg = text("Usage: ", args[0], " infile outfile
+enum OutputType { html, text };
+
+void parse_cmdline(string[] args, out OutputType output_type, out string infile, out string outfile) {
+    const helpmsg = text("Usage: ", args[0], " [options] infile outfile
+
+Options:
+    --output=text|html
+    -o text|html          Set output format to html or text. Default is html.
+
+    --help
+    -h                    This help message.
 
 infile:
     Input file name.
@@ -25,7 +34,10 @@ outfile:
 ");
 
     try {
-	auto getoptResult = getopt(args);
+	output_type = OutputType.html;
+	auto getoptResult = getopt(
+		args,
+		"output|o", "Set output type to html or text. (Default: html)", &output_type);
 	if (getoptResult.helpWanted) {
 	    writeln(helpmsg);
 	    exit(0);
@@ -170,7 +182,7 @@ class TweetStats {
 	    foreach (word; words)
 		count_by_words[i][word] ++;
 	}
-    }
+    } // process_record
 
     void report_text(ref File f) {
 	void report_title(string title) {
@@ -226,7 +238,10 @@ class TweetStats {
 		    .take(20))
 		f.writeln(word, ": ", count_by_words[i][word]);
 	}
-    }
+    } // report_text
+
+    void report_html(ref File f) {
+    } // report_html
 }
 
 TweetStats process_zipfile(string infile) {
@@ -254,17 +269,21 @@ TweetStats process_zipfile(string infile) {
 	exit(2);
 	assert(0);
     }
-}
+} // process_zipfile
 
 void main(string[] args)
 {
     string infile;
     string outfile;
+    OutputType output_type;
 
-    parse_cmdline(args, infile, outfile);
+    parse_cmdline(args, output_type, infile, outfile);
 
     auto tweetstats = process_zipfile(infile);
 
     auto outf = File(outfile, "w");
-    tweetstats.report_text(outf);
+    if (output_type == OutputType.html)
+	tweetstats.report_html(outf);
+    else
+	tweetstats.report_text(outf);
 }
