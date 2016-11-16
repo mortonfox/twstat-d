@@ -1,9 +1,10 @@
 {
-	"name": "twstat-d",
-	"authors": [
-		"Morton Fox"
-	],
-	"description": "Generate Twitter stats from a downloaded Twitter archive",
-	"copyright": "",
-	"license": "GPL3"
+    "name": "twstat-d",
+    "authors": [ "Morton Fox" ],
+    "description": "Generate Twitter stats from a downloaded Twitter archive",
+    "copyright": "",
+    "license": "GPL3",
+    "dependencies": {
+	"mustache-d": "~>0.1.1"
+    }
 }
