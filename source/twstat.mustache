@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Twitter Archive Stats</title>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js"></script>
+
+  <style type="text/css">
+    body {
+      background-color: #ffffff; 
+      color: #000000;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .noscript_text {
+      text-align: center;
+      color: #ff0000;
+    }
+
+    table {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    caption {
+      caption-side: bottom;
+    }
+
+    .tooltip {
+      padding: 5px;
+    }
+
+    #by_words_alltime, #by_words_last30 {
+      width: 600px;
+      height: 400px;
+    }
+
+    {{extra_css}}
+  </style>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css" />
+  
+  <script type="text/javascript">
+      /*jslint white: true, browser: true */
+
+      function draw_by_month(month_data, month_min, month_max) {
+          "use strict";
+
+          // Create and populate the data table.
+          var data = new google.visualization.DataTable();
+          data.addColumn('date', 'Month');
+          data.addColumn('number', 'Count');
+          data.addColumn({type:'string', role:'tooltip', p: {html: true}});
+          data.addColumn({type:'string', role:'style'});
+          data.addRows(month_data);
+
+          // Create and draw the visualization.
+          new google.visualization.ColumnChart(document.getElementById('by_month')).draw(data,
+              {
+                  title : "Tweets by Month",
+                  width : 1200, 
+                  height : 400,
+                  legend : {
+                      position: 'none'
+                  },
+                  tooltip : {
+                      isHtml : true 
+                  },
+                  hAxis: {
+                      gridlines: { 
+                          color: 'transparent'
+                      },
+                      title: "Month", 
+                      viewWindowMode: 'explicit', viewWindow: {
+                          max: month_max, min: month_min
+                      }
+                  }
+              }
+          );
+      }
+
+      function draw_by_dow(dow_data, chart_title, elemid) {
+          "use strict";
+
+          // Create and populate the data table.
+          var data = new google.visualization.DataTable();
+          data.addColumn('string', 'Day of Week');
+          data.addColumn('number', 'Count');
+          data.addColumn({type:'string', role:'tooltip', p: {html: true}});
+          data.addColumn({type:'string', role:'style'});
+          data.addRows(dow_data);
+
+          // Create and draw the visualization.
+          new google.visualization.ColumnChart(document.getElementById(elemid)).draw(data,
+              {
+                  title : chart_title,
+                  width : 600, 
+                  height : 400,
+                  legend: {position: 'none'},
+                  tooltip : {
+                      isHtml : true 
+                  },
+                  hAxis: {
+                      title: "Day of Week", 
+                      gridlines:{ color: 'transparent'}
+                  }
+              }
+          );
+      }
+
+      function draw_by_hour(hour_data, chart_title, elemid) {
+          "use strict";
+
+          // Create and populate the data table.
+          var data = new google.visualization.DataTable();
+          data.addColumn('number', 'Hour');
+          data.addColumn('number', 'Count');
+          data.addColumn({type:'string', role:'tooltip', p: {html: true}});
+          data.addColumn({type:'string', role:'style'});
+          data.addRows(hour_data);
+
+          // Create and draw the visualization.
+          new google.visualization.ColumnChart(document.getElementById(elemid)).draw(data,
+              {
+                  title : chart_title,
+                  width : 600, 
+                  height : 400,
+                  legend: {position: 'none'},
+                  tooltip: { isHtml: true },
+                  hAxis: {
+                      baselineColor: 'transparent',
+                      title: 'Hour',
+                      gridlines:{ color: 'transparent'},
+                      viewWindowMode: 'explicit', viewWindow: {
+                          max: 23.5, min: -0.5
+                      },
+                      ticks: [0, 6, 12, 18, 24]
+                  }
+              }
+          );
+      }
+
+      function draw_by_mention(mention_data, chart_title, elemid) {
+          "use strict";
+
+          // Create and populate the data table.
+          var data = new google.visualization.DataTable();
+          data.addColumn('string', 'User');
+          data.addColumn('number', 'Count');
+          data.addColumn({type:'string', role:'style'});
+          data.addRows(mention_data);
+
+          // Create and draw the visualization.
+          new google.visualization.BarChart(document.getElementById(elemid)).draw(data,
+              {
+                  title : chart_title,
+                  width : 600, 
+                  height : 400,
+                  legend: {position: 'none'},
+                  hAxis: {
+                      viewWindowMode: 'explicit', viewWindow: {
+                          min: 0
+                      }
+                  }
+              }
+          );
+      }
+
+      function cloud_by_words(words_data, elemid) {
+          "use strict";
+          $("#" + elemid).jQCloud(words_data);
+      }
+
+      function drawCharts() {
+          "use strict";
+
+          draw_by_month(
+		  [ {{by_month_data}} ], 
+		  new Date({{by_month_min}}), 
+		  new Date({{by_month_max}})
+          );
+
+          draw_by_dow(
+		  [ {{by_dow_data_alltime}} ],
+		  "Tweets by Day of Week ({{title_alltime}})",
+              "by_dow_alltime"
+          );
+          draw_by_dow(
+		  [ {{by_dow_data_last30}} ],
+		  "Tweets by Day of Week ({{title_last30}})",
+              "by_dow_last30"
+          );
+
+          draw_by_hour(
+		  [ {{by_hour_data_alltime}} ],
+		  "Tweets by Hour ({{title_alltime}})",
+              "by_hour_alltime"
+          );
+          draw_by_hour(
+		  [ {{by_hour_data_last30}} ],
+		  "Tweets by Hour ({{title_last30}})",
+              "by_hour_last30"
+          );
+
+          draw_by_mention(
+		  [ {{by_mention_data_alltime}} ],
+		  "Top Mentions ({{title_alltime}})",
+              "by_mention_alltime"
+          );
+          draw_by_mention(
+		  [ {{by_mention_data_last30}} ],
+		  "Top Mentions ({{title_last30}})",
+              "by_mention_last30"
+          );
+
+          draw_by_mention(
+		  [ {{by_source_data_alltime}} ],
+		  "Top Clients ({{title_alltime}})",
+              "by_source_alltime"
+          );
+          draw_by_mention(
+		  [ {{by_source_data_last30}} ],
+		  "Top Clients ({{title_last30}})",
+              "by_source_last30"
+          );
+
+      }
+
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawCharts);
+      $(document).ready(function() {
+          "use strict";
+
+          cloud_by_words(
+		  [ {{by_words_data_alltime}} ],
+              "by_words_alltime"
+          );
+          cloud_by_words(
+		  [ {{by_words_data_last30}} ],
+              "by_words_last30"
+          );
+      });
+  </script>
+</head>
+
+<body>
+  <h1>Twitter Archive Stats</h1>
+  <h2>{{subtitle}}</h2>
+
+  <noscript>
+    <div class="noscript_text">
+      Please enable Javascript. It is needed to display charts and word clouds.
+    </div>
+  </noscript>
+
+  <table>
+    <tr>
+      <td colspan="2">
+        <div id="by_month"></div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div id="by_dow_alltime"></div>
+      </td>
+      <td>
+        <div id="by_dow_last30"></div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div id="by_hour_alltime"></div>
+      </td>
+      <td>
+        <div id="by_hour_last30"></div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div id="by_mention_alltime"></div>
+      </td>
+      <td>
+        <div id="by_mention_last30"></div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div id="by_source_alltime"></div>
+      </td>
+      <td>
+        <div id="by_source_last30"></div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+
+        <table>
+          <caption>Words (all time)</caption>
+          <tr>
+            <td>
+              <div id="by_words_alltime"></div>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+      <td>
+
+        <table>
+          <caption>Words (last 30 days)</caption>
+          <tr>
+            <td>
+              <div id="by_words_last30"></div>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
