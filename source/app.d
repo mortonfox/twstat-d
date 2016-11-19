@@ -13,6 +13,7 @@ import std.string;
 import std.uni;
 import std.zip;
 import core.stdc.stdlib : exit;
+import mustache;
 
 enum OutputType { html, text };
 
@@ -241,6 +242,16 @@ class TweetStats {
     } // report_text
 
     void report_html(ref File f) {
+	alias MustacheEngine!(string) Mustache;
+	Mustache mustache;
+	auto context = new Mustache.Context;
+
+	context["subtitle"] = text("from ",
+		format("%04d-%02d-%02d", oldest_tstamp.year, oldest_tstamp.month, oldest_tstamp.day),
+		" to ",
+		format("%04d-%02d-%02d", newest_tstamp.year, newest_tstamp.month, newest_tstamp.day));
+
+	f.rawWrite(mustache.render("source/twstat", context));
     } // report_html
 }
 
