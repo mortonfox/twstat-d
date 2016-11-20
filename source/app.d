@@ -268,12 +268,8 @@ class TweetStats {
 	    return format("[new Date(%d, %d), %d, '%s', '%s']", year, month - 1, count_by_month[month_str], make_tooltip(month_str, count_by_month[month_str]), colors[i % 6]);
 	}
 
-	string[] by_month_data;
 	int i = 0;
-	foreach (month_str; months) {
-	    by_month_data ~= process_month(month_str, i);
-	    ++i;
-	}
+	auto by_month_data = map!(month_str => process_month(month_str, i++))(months);
 	context["by_month_data"] = by_month_data.join(",\n");
 
 	int first_month_year, first_month_month, last_month_year, last_month_month;
@@ -292,7 +288,7 @@ class TweetStats {
 
 	f.rawWrite(mustache.render("source/twstat", context));
     } // report_html
-}
+} // class TweetStats
 
 TweetStats process_zipfile(string infile) {
     const tweets_file = "tweets.csv";
