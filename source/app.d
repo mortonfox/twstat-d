@@ -258,10 +258,13 @@ class TweetStats {
 
 	auto months = sort(count_by_month.keys);
 
+	void parse_month_str(string month_str, out int year, out int month) {
+	    formattedRead(month_str, "%d-%d", &year, &month);
+	}
+
 	string process_month(string month_str, int i) {
 	    int year, month;
-	    string month_str_copy = month_str;
-	    formattedRead(month_str_copy, "%d-%d", &year, &month);
+	    parse_month_str(month_str, year, month);
 	    return format("[new Date(%d, %d), %d, '%s', '%s']", year, month - 1, count_by_month[month_str], make_tooltip(month_str, count_by_month[month_str]), colors[i % 6]);
 	}
 
@@ -274,11 +277,9 @@ class TweetStats {
 	context["by_month_data"] = by_month_data.join(",\n");
 
 	int first_month_year, first_month_month, last_month_year, last_month_month;
-	string first_month_str = months[0];
-	formattedRead(first_month_str, "%d-%d", &first_month_year, &first_month_month);
+	parse_month_str(months[0], first_month_year, first_month_month);
 	auto first_month = Date(first_month_year, first_month_month, 15).add!("months")(-1);
-	string last_month_str = months[$ - 1];
-	formattedRead(last_month_str, "%d-%d", &last_month_year, &last_month_month);
+	parse_month_str(months[$ - 1], last_month_year, last_month_month);
 	auto last_month = Date(last_month_year, last_month_month, 15);
 
 	context["by_month_min"] = format("%d, %d, %d", first_month.year, first_month.month - 1, first_month.day);
