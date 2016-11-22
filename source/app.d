@@ -317,6 +317,21 @@ class TweetStats {
 	    context["by_hour_data_" ~ period.keyword] = by_hour_data.join(",\n");
 	}
 
+	string process_mention(string user, ulong period_index, int i) {
+	    int count = count_by_mentions[period_index][user];
+	    return format("[ '@%s', %d, '%s' ]",
+		    user, count, colors[i % colors.length]);
+	}
+
+	foreach (i, period; count_defs) {
+	    auto j = 0;
+	    auto users = count_by_mentions[i].keys
+		.sort!((a, b) => count_by_mentions[i][a] > count_by_mentions[i][b])
+		.take(10);
+	    auto by_mention_data = map!(count => process_mention(count, i, j++))(users);
+	    context["by_mention_data_" ~ period.keyword] = by_mention_data.join(",\n");
+	}
+
 	foreach (period; count_defs)
 	    context["title_" ~ period.keyword] = period.title;
 
