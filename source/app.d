@@ -319,8 +319,7 @@ class TweetStats {
 
 	string process_mention(string user, ulong period_index, int i) {
 	    int count = count_by_mentions[period_index][user];
-	    return format("[ '@%s', %d, '%s' ]",
-		    user, count, colors[i % colors.length]);
+	    return format("[ '@%s', %d, '%s' ]", user, count, colors[i % $]);
 	}
 
 	foreach (i, period; count_defs) {
@@ -330,6 +329,20 @@ class TweetStats {
 		.take(10);
 	    auto by_mention_data = map!(count => process_mention(count, i, j++))(users);
 	    context["by_mention_data_" ~ period.keyword] = by_mention_data.join(",\n");
+	}
+
+	string process_source(string source, ulong period_index, int i) {
+	    int count = count_by_source[period_index][source];
+	    return format("['%s', %d, '%s']", source, count, colors[i % $]);
+	}
+
+	foreach (i, period; count_defs) {
+	    auto j = 0;
+	    auto users = count_by_source[i].keys
+		.sort!((a, b) => count_by_source[i][a] > count_by_source[i][b])
+		.take(10);
+	    auto by_source_data = map!(count => process_source(count, i, j++))(users);
+	    context["by_source_data_" ~ period.keyword] = by_source_data.join(",\n");
 	}
 
 	foreach (period; count_defs)
