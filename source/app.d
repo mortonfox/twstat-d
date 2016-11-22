@@ -270,9 +270,11 @@ class TweetStats {
 	    return format("[new Date(%d, %d), %d, '%s', '%s']", year, month - 1, count_by_month[month_str], make_tooltip(month_str, count_by_month[month_str]), colors[i % 6]);
 	}
 
-	int i = 0;
-	auto by_month_data = map!(month_str => process_month(month_str, i++))(months);
-	context["by_month_data"] = by_month_data.join(",\n");
+	{
+	    auto i = 0;
+	    auto by_month_data = map!(month_str => process_month(month_str, i++))(months);
+	    context["by_month_data"] = by_month_data.join(",\n");
+	}
 
 	int first_month_year, first_month_month, last_month_year, last_month_month;
 	parse_month_str(months[0], first_month_year, first_month_month);
@@ -287,6 +289,20 @@ class TweetStats {
 		format("%04d-%02d-%02d", oldest_tstamp.year, oldest_tstamp.month, oldest_tstamp.day),
 		" to ",
 		format("%04d-%02d-%02d", newest_tstamp.year, newest_tstamp.month, newest_tstamp.day));
+
+	string process_dow(int count, int i) {
+	    return format("['%s', %d, '%s', '%s']",
+		    downames[i],
+		    count,
+		    make_tooltip(downames[i], count),
+		    colors[i]);
+	}
+
+	foreach (i, period; count_defs) {
+	    auto j = 0;
+	    auto by_dow_data = map!(count => process_dow(count, j++))(count_by_dow[i][]);
+	    context["by_dow_data_" ~ period.keyword] = by_dow_data.join(",\n");
+	}
 
 	foreach (period; count_defs)
 	    context["title_" ~ period.keyword] = period.title;
