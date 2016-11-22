@@ -304,6 +304,19 @@ class TweetStats {
 	    context["by_dow_data_" ~ period.keyword] = by_dow_data.join(",\n");
 	}
 
+	string process_hour(int count, int i) {
+	    return format("[%d, %d, '%s', '%s']",
+		    i, count,
+		    make_tooltip(text("Hour ", i), count),
+		    colors[i % 6]);
+	}
+
+	foreach (i, period; count_defs) {
+	    auto j = 0;
+	    auto by_hour_data = map!(count => process_hour(count, j++))(count_by_hour[i][]);
+	    context["by_hour_data_" ~ period.keyword] = by_hour_data.join(",\n");
+	}
+
 	foreach (period; count_defs)
 	    context["title_" ~ period.keyword] = period.title;
 
