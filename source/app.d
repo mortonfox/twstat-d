@@ -76,11 +76,13 @@ DateTime parse_tstamp(string timestamp) {
 
 struct PeriodInfo {
     string title;
+    string keyword;
     int days;
     DateTime cutoff;
 
-    this(string title, int days) {
+    this(string title, string keyword, int days) {
 	this.title = title;
+	this.keyword = keyword;
 	this.days = days;
 	cutoff = DateTime(1980, 1, 1);
     }
@@ -110,10 +112,15 @@ class TweetStats {
 
     int[string] common_words;
 
+    static downames = [
+	"Sunday", "Monday", "Tuesday", "Wednesday", 
+	"Thursday", "Friday", "Saturday"
+    ];
+
     this() {
 	count_defs = [
-	    PeriodInfo("all time", 0),
-	    PeriodInfo("last 30 days", 30)
+	    PeriodInfo("all time", "alltime", 0),
+	    PeriodInfo("last 30 days", "last30", 30)
 	];
 
 	auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
@@ -196,11 +203,6 @@ class TweetStats {
 	report_title("Tweets by Month");
 	foreach (month_str; sort(count_by_month.keys))
 	    f.writeln(month_str, ": ", count_by_month[month_str]);
-
-	auto downames = [
-	    "Sunday", "Monday", "Tuesday", "Wednesday", 
-	    "Thursday", "Friday", "Saturday"
-	];
 
 	foreach (i, period; count_defs) {
 	    report_title(text("Tweets by Day of Week (", period.title, ")"));
@@ -285,6 +287,9 @@ class TweetStats {
 		format("%04d-%02d-%02d", oldest_tstamp.year, oldest_tstamp.month, oldest_tstamp.day),
 		" to ",
 		format("%04d-%02d-%02d", newest_tstamp.year, newest_tstamp.month, newest_tstamp.day));
+
+	foreach (period; count_defs)
+	    context["title_" ~ period.keyword] = period.title;
 
 	f.rawWrite(mustache.render("source/twstat", context));
     } // report_html
