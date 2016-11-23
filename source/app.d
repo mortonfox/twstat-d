@@ -323,10 +323,10 @@ class TweetStats {
 	}
 
 	foreach (i, period; count_defs) {
-	    auto j = 0;
 	    auto users = count_by_mentions[i].keys
 		.sort!((a, b) => count_by_mentions[i][a] > count_by_mentions[i][b])
 		.take(10);
+	    auto j = 0;
 	    auto by_mention_data = map!(count => process_mention(count, i, j++))(users);
 	    context["by_mention_data_" ~ period.keyword] = by_mention_data.join(",\n");
 	}
@@ -337,10 +337,10 @@ class TweetStats {
 	}
 
 	foreach (i, period; count_defs) {
-	    auto j = 0;
 	    auto sources = count_by_source[i].keys
 		.sort!((a, b) => count_by_source[i][a] > count_by_source[i][b])
 		.take(10);
+	    auto j = 0;
 	    auto by_source_data = map!(count => process_source(count, i, j++))(sources);
 	    context["by_source_data_" ~ period.keyword] = by_source_data.join(",\n");
 	}
@@ -351,7 +351,6 @@ class TweetStats {
 	}
 
 	foreach (i, period; count_defs) {
-	    auto j = 0;
 	    auto words = count_by_words[i].keys
 		.sort!((a, b) => count_by_words[i][a] > count_by_words[i][b])
 		.take(100);
