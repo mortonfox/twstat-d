@@ -338,11 +338,25 @@ class TweetStats {
 
 	foreach (i, period; count_defs) {
 	    auto j = 0;
-	    auto users = count_by_source[i].keys
+	    auto sources = count_by_source[i].keys
 		.sort!((a, b) => count_by_source[i][a] > count_by_source[i][b])
 		.take(10);
-	    auto by_source_data = map!(count => process_source(count, i, j++))(users);
+	    auto by_source_data = map!(count => process_source(count, i, j++))(sources);
 	    context["by_source_data_" ~ period.keyword] = by_source_data.join(",\n");
+	}
+
+	string process_words(string word, ulong period_index) {
+	    auto count = count_by_words[period_index][word];
+	    return format("{text: \"%s\", weight: %d}", word, count);
+	}
+
+	foreach (i, period; count_defs) {
+	    auto j = 0;
+	    auto words = count_by_words[i].keys
+		.sort!((a, b) => count_by_words[i][a] > count_by_words[i][b])
+		.take(100);
+	    auto by_words_data = map!(count => process_words(count, i))(words);
+	    context["by_words_data_" ~ period.keyword] = by_words_data.join(",\n");
 	}
 
 	foreach (period; count_defs)
