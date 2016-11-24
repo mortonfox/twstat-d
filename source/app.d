@@ -64,21 +64,16 @@ struct TweetRecord {
     string text;
 }
 
-DateTime parse_tstamp(string timestamp) {
-    int year, mon, day, hour, min, sec;
-    auto numread = formattedRead(timestamp, "%d-%d-%d %d:%d:%d", &year, &mon, &day, &hour, &min, &sec);
-    if (numread < 6)
-	throw new Exception(text("Unrecognized timestamp format: ", timestamp));
-
-    auto tsystime = new SysTime(DateTime(year, mon, day, hour, min, sec), UTC());
-    return cast(DateTime) tsystime.toLocalTime();
-}
-
 struct PeriodInfo {
     string title;
     string keyword;
     int days;
     DateTime cutoff;
+    int[7] count_by_dow;
+    int[24] count_by_hour;
+    int[string] count_by_mentions;
+    int[string] count_by_source;
+    int[string] count_by_words;
 
     this(string title, string keyword, int days) {
 	this.title = title;
@@ -91,12 +86,6 @@ struct PeriodInfo {
 class TweetStats {
     int[string] count_by_month;
     PeriodInfo[] count_defs;
-
-    int[7][2] count_by_dow;
-    int[24][2] count_by_hour;
-    int[string][2] count_by_mentions;
-    int[string][2] count_by_source;
-    int[string][2] count_by_words;
 
     // Archive entries before this point all have 00:00:00 as the time, so don't
     // include them in the by-hour chart.
@@ -141,7 +130,18 @@ class TweetStats {
 	];
     }
 
+    DateTime parse_tstamp(string timestamp) {
+	int year, mon, day, hour, min, sec;
+	auto numread = formattedRead(timestamp, "%d-%d-%d %d:%d:%d", &year, &mon, &day, &hour, &min, &sec);
+	if (numread < 6)
+	    throw new Exception(text("Unrecognized timestamp format: ", timestamp));
+
+	auto tsystime = new SysTime(DateTime(year, mon, day, hour, min, sec), UTC());
+	return cast(DateTime) tsystime.toLocalTime();
+    }
+
     void process_record(TweetRecord record) {
+
 	auto tstamp = parse_tstamp(record.timestamp);
 
 	// Save the newest timestamp since the last N days stat refers to the N
@@ -175,21 +175,21 @@ class TweetStats {
 	    .toLower.split(word_split_regex)
 	    .filter!(w => w.length >= 3 && w !in common_words);
 
-	foreach (i, period; count_defs) {
+	foreach (ref period; count_defs) {
 	    if (tstamp < period.cutoff) continue;
 
-	    count_by_dow[i][tstamp.dayOfWeek()] ++;
+	    period.count_by_dow[tstamp.dayOfWeek()] ++;
 
 	    if (tstamp >= zero_time_cutoff)
-		count_by_hour[i][tstamp.hour] ++;
+		period.count_by_hour[tstamp.hour] ++;
 
 	    foreach (mention; mentions)
-		count_by_mentions[i][mention[1]] ++;
+		period.count_by_mentions[mention[1]] ++;
 
-	    count_by_source[i][source] ++;
+	    period.count_by_source[source] ++;
 
 	    foreach (word; words)
-		count_by_words[i][word] ++;
+		period.count_by_words[word] ++;
 	}
     } // process_record
 
@@ -204,43 +204,43 @@ class TweetStats {
 	foreach (month_str; sort(count_by_month.keys))
 	    f.writeln(month_str, ": ", count_by_month[month_str]);
 
-	foreach (i, period; count_defs) {
+	foreach (period; count_defs) {
 	    report_title(text("Tweets by Day of Week (", period.title, ")"));
-	    foreach (j, count; count_by_dow[i])
+	    foreach (j, count; period.count_by_dow)
 		f.writeln(downames[j], ": ", count);
 	}
 
-	foreach (i, period; count_defs) {
+	foreach (period; count_defs) {
 	    report_title(text("Tweets by Hour (", period.title, ")"));
-	    foreach (j, count; count_by_hour[i])
+	    foreach (j, count; period.count_by_hour)
 		f.writeln(j, ": ", count);
 	}
 
-	foreach (i, period; count_defs) {
+	foreach (period; count_defs) {
 	    report_title(text("Top Mentions (", period.title, ")"));
 	    foreach (user;
-		    count_by_mentions[i].keys
-		    .sort!((a, b) => count_by_mentions[i][a] > count_by_mentions[i][b])
+		    period.count_by_mentions.keys
+		    .sort!((a, b) => period.count_by_mentions[a] > period.count_by_mentions[b])
 		    .take(10))
-		f.writeln(user, ": ", count_by_mentions[i][user]);
+		f.writeln(user, ": ", period.count_by_mentions[user]);
 	}
 
-	foreach (i, period; count_defs) {
+	foreach (period; count_defs) {
 	    report_title(text("Top Clients (", period.title, ")"));
 	    foreach (source;
-		    count_by_source[i].keys
-		    .sort!((a, b) => count_by_source[i][a] > count_by_source[i][b])
+		    period.count_by_source.keys
+		    .sort!((a, b) => period.count_by_source[a] > period.count_by_source[b])
 		    .take(10))
-		f.writeln(source, ": ", count_by_source[i][source]);
+		f.writeln(source, ": ", period.count_by_source[source]);
 	}
 
-	foreach (i, period; count_defs) {
+	foreach (period; count_defs) {
 	    report_title(text("Top Words (", period.title, ")"));
 	    foreach (word;
-		    count_by_words[i].keys
-		    .sort!((a, b) => count_by_words[i][a] > count_by_words[i][b])
+		    period.count_by_words.keys
+		    .sort!((a, b) => period.count_by_words[a] > period.count_by_words[b])
 		    .take(20))
-		f.writeln(word, ": ", count_by_words[i][word]);
+		f.writeln(word, ": ", period.count_by_words[word]);
 	}
     } // report_text
 
@@ -298,9 +298,9 @@ class TweetStats {
 		    colors[i]);
 	}
 
-	foreach (i, period; count_defs) {
+	foreach (period; count_defs) {
 	    auto j = 0;
-	    auto by_dow_data = map!(count => process_dow(count, j++))(count_by_dow[i][]);
+	    auto by_dow_data = map!(count => process_dow(count, j++))(period.count_by_dow[]);
 	    context["by_dow_data_" ~ period.keyword] = by_dow_data.join(",\n");
 	}
 
@@ -311,50 +311,50 @@ class TweetStats {
 		    colors[i % 6]);
 	}
 
-	foreach (i, period; count_defs) {
+	foreach (period; count_defs) {
 	    auto j = 0;
-	    auto by_hour_data = map!(count => process_hour(count, j++))(count_by_hour[i][]);
+	    auto by_hour_data = map!(count => process_hour(count, j++))(period.count_by_hour[]);
 	    context["by_hour_data_" ~ period.keyword] = by_hour_data.join(",\n");
 	}
 
-	string process_mention(string user, ulong period_index, int i) {
-	    int count = count_by_mentions[period_index][user];
+	string process_mention(string user, in PeriodInfo period, int i) {
+	    int count = period.count_by_mentions[user];
 	    return format("[ '@%s', %d, '%s' ]", user, count, colors[i % $]);
 	}
 
-	foreach (i, period; count_defs) {
-	    auto users = count_by_mentions[i].keys
-		.sort!((a, b) => count_by_mentions[i][a] > count_by_mentions[i][b])
+	foreach (period; count_defs) {
+	    auto users = period.count_by_mentions.keys
+		.sort!((a, b) => period.count_by_mentions[a] > period.count_by_mentions[b])
 		.take(10);
 	    auto j = 0;
-	    auto by_mention_data = map!(count => process_mention(count, i, j++))(users);
+	    auto by_mention_data = map!(count => process_mention(count, period, j++))(users);
 	    context["by_mention_data_" ~ period.keyword] = by_mention_data.join(",\n");
 	}
 
-	string process_source(string source, ulong period_index, int i) {
-	    int count = count_by_source[period_index][source];
+	string process_source(string source, in PeriodInfo period, int i) {
+	    int count = period.count_by_source[source];
 	    return format("['%s', %d, '%s']", source, count, colors[i % $]);
 	}
 
-	foreach (i, period; count_defs) {
-	    auto sources = count_by_source[i].keys
-		.sort!((a, b) => count_by_source[i][a] > count_by_source[i][b])
+	foreach (period; count_defs) {
+	    auto sources = period.count_by_source.keys
+		.sort!((a, b) => period.count_by_source[a] > period.count_by_source[b])
 		.take(10);
 	    auto j = 0;
-	    auto by_source_data = map!(count => process_source(count, i, j++))(sources);
+	    auto by_source_data = map!(count => process_source(count, period, j++))(sources);
 	    context["by_source_data_" ~ period.keyword] = by_source_data.join(",\n");
 	}
 
-	string process_words(string word, ulong period_index) {
-	    auto count = count_by_words[period_index][word];
+	string process_words(string word, in PeriodInfo period) {
+	    auto count = period.count_by_words[word];
 	    return format("{text: \"%s\", weight: %d}", word, count);
 	}
 
-	foreach (i, period; count_defs) {
-	    auto words = count_by_words[i].keys
-		.sort!((a, b) => count_by_words[i][a] > count_by_words[i][b])
+	foreach (period; count_defs) {
+	    auto words = period.count_by_words.keys
+		.sort!((a, b) => period.count_by_words[a] > period.count_by_words[b])
 		.take(100);
-	    auto by_words_data = map!(count => process_words(count, i))(words);
+	    auto by_words_data = map!(count => process_words(count, period))(words);
 	    context["by_words_data_" ~ period.keyword] = by_words_data.join(",\n");
 	}
 
