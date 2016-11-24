@@ -46,7 +46,7 @@ class TweetStats {
 
     private DateTime oldest_tstamp;
     private DateTime newest_tstamp;
-    private bool first_record = true;
+    private int row_count;
 
     private static mention_regex = ctRegex!(`\B@([A-Za-z0-9_]+)`);
     private static strip_a_tag_regex = ctRegex!(`<a[^>]*>(.*)</a>`);
@@ -83,6 +83,10 @@ class TweetStats {
 	];
     }
 
+    private string format_date(DateTime tstamp) {
+	return format("%04d-%02d-%02d", tstamp.year, tstamp.month, tstamp.day);
+    }
+
     private DateTime parse_tstamp(string timestamp) {
 	int year, mon, day, hour, min, sec;
 	auto numread = formattedRead(timestamp, "%d-%d-%d %d:%d:%d", &year, &mon, &day, &hour, &min, &sec);
@@ -93,8 +97,9 @@ class TweetStats {
 	return cast(DateTime) tsystime.toLocalTime();
     }
 
-    void process_record(TweetRecord record) {
+    private const progress_interval = 5_000;
 
+    void process_record(TweetRecord record) {
 	auto tstamp = parse_tstamp(record.timestamp);
 
 	// Save the newest timestamp since the last N days stat refers to the N
@@ -102,17 +107,21 @@ class TweetStats {
 	// time. This is because omeone may be running the script on a Twitter
 	// archive that was downloaded long ago. The following code assumes
 	// that tweets.csv is ordered from newest to oldest.
-	if (first_record) {
-	    first_record = false;
-
+	if (row_count == 0) {
 	    newest_tstamp = tstamp;
-
 	    foreach (ref period; count_defs)
 		if (period.days)
 		    period.cutoff = newest_tstamp - days(period.days);
 	}
 
 	oldest_tstamp = tstamp;
+
+	row_count ++;
+
+	if (row_count % progress_interval == 0) {
+	    writef("\rProcessing row %d (%s) ...", row_count, format_date(tstamp));
+	    stdout.flush;
+	}
 
 	auto month_text = format("%04d-%02d", tstamp.year, tstamp.month);
 	count_by_month[month_text] ++;
@@ -243,9 +252,9 @@ class TweetStats {
 	context["by_month_max"] = format("%d, %d, %d", last_month.year, last_month.month - 1, last_month.day);
 
 	context["subtitle"] = text("from ",
-		format("%04d-%02d-%02d", oldest_tstamp.year, oldest_tstamp.month, oldest_tstamp.day),
+		format_date(oldest_tstamp),
 		" to ",
-		format("%04d-%02d-%02d", newest_tstamp.year, newest_tstamp.month, newest_tstamp.day));
+		format_date(newest_tstamp));
 
 	string process_dow(int count, int i) {
 	    return format("['%s', %d, '%s', '%s']",
