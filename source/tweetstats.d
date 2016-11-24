@@ -83,7 +83,7 @@ class TweetStats {
 	];
     }
 
-    private string format_date(DateTime tstamp) {
+    private string format_date(in DateTime tstamp) {
 	return format("%04d-%02d-%02d", tstamp.year, tstamp.month, tstamp.day);
     }
 
@@ -99,7 +99,7 @@ class TweetStats {
 
     private const progress_interval = 5_000;
 
-    void process_record(TweetRecord record) {
+    void process_record(in TweetRecord record) {
 	auto tstamp = parse_tstamp(record.timestamp);
 
 	// Save the newest timestamp since the last N days stat refers to the N
