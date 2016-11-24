@@ -318,6 +318,7 @@ class TweetStats {
 	foreach (period; count_defs)
 	    context["title_" ~ period.keyword] = period.title;
 
-	f.rawWrite(mustache.render("source/twstat", context));
+	auto templ = import("twstat.mustache");
+	f.rawWrite(mustache.renderString(templ, context));
     } // report_html
 } // class TweetStats
