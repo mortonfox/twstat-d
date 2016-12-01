@@ -4,7 +4,7 @@ import std.array : array, join;
 import std.conv : text;
 import std.datetime : DateTime, SysTime, days, Date, UTC;
 import std.format : formattedRead, format;
-import std.range : repeat, take;
+import std.range : repeat, take, enumerate;
 import std.regex : matchAll, replaceAll, split, ctRegex;
 import std.stdio : File, writef, stdout;
 import std.string : tr, toLower;
@@ -71,7 +71,7 @@ class TweetStats {
             "down" : 1, "day" : 1, "did" : 1, "get" : 1, "come" : 1, "made" : 1,
             "may" : 1, "part" : 1, "http" : 1, "com" : 1, "net" : 1, "org" : 1,
             "www" : 1, "https" : 1, "it's" : 1, "too" : 1, "i'm" : 1,
-            "i'll" : 1, "their" : 1
+            "i'll" : 1, "their" : 1, "i've" : 1, "don't" : 1
         ];
 
         auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
@@ -236,7 +236,7 @@ class TweetStats {
             formattedRead(month_str, "%d-%d", &year, &month);
         }
 
-        auto process_month(string month_str, int i) {
+        auto process_month(string month_str, size_t i) {
             int year, month;
             parse_month_str(month_str, year, month);
             return format("[new Date(%d, %d), %d, '%s', '%s']",
@@ -247,8 +247,8 @@ class TweetStats {
         }
 
         {
-            auto i = 0;
-            auto by_month_data = map!(month_str => process_month(month_str, i++))(months);
+            auto by_month_data = months.enumerate
+                .map!(month_pair => process_month(month_pair.value, month_pair.index));
             context["by_month_data"] = by_month_data.join(",\n");
         }
 
@@ -266,7 +266,7 @@ class TweetStats {
                 " to ",
                 format_date(newest_tstamp));
 
-        auto process_dow(int count, int i) {
+        auto process_dow(int count, size_t i) {
             return format("['%s', %d, '%s', '%s']",
                     downames[i],
                     count,
@@ -275,12 +275,12 @@ class TweetStats {
         }
 
         foreach (period; count_defs) {
-            auto j = 0;
-            auto by_dow_data = map!(count => process_dow(count, j++))(period.count_by_dow[]);
+            auto by_dow_data = period.count_by_dow[].enumerate
+                .map!(dow_pair => process_dow(dow_pair.value, dow_pair.index));
             context["by_dow_data_" ~ period.keyword] = by_dow_data.join(",\n");
         }
 
-        auto process_hour(int count, int i) {
+        auto process_hour(int count, size_t i) {
             return format("[%d, %d, '%s', '%s']",
                     i, count,
                     make_tooltip(text("Hour ", i), count),
@@ -288,12 +288,12 @@ class TweetStats {
         }
 
         foreach (period; count_defs) {
-            auto j = 0;
-            auto by_hour_data = map!(count => process_hour(count, j++))(period.count_by_hour[]);
+            auto by_hour_data = period.count_by_hour[].enumerate
+                .map!(hour_pair => process_hour(hour_pair.value, hour_pair.index));
             context["by_hour_data_" ~ period.keyword] = by_hour_data.join(",\n");
         }
 
-        auto process_mention(string user, int count, int i) {
+        auto process_mention(string user, int count, size_t i) {
             return format("[ '@%s', %d, '%s' ]", user, count, colors[i % $]);
         }
 
@@ -302,12 +302,12 @@ class TweetStats {
                 .array
                 .sort!((a, b) => a.value > b.value)
                 .take(10);
-            auto j = 0;
-            auto by_mention_data = map!(mention => process_mention(mention.key, mention.value, j++))(top_mentions);
+            auto by_mention_data = top_mentions.enumerate
+                .map!(mention_pair => process_mention(mention_pair.value.key, mention_pair.value.value, mention_pair.index));
             context["by_mention_data_" ~ period.keyword] = by_mention_data.join(",\n");
         }
 
-        auto process_source(string source, int count, int i) {
+        auto process_source(string source, int count, size_t i) {
             return format("['%s', %d, '%s']", source, count, colors[i % $]);
         }
 
@@ -316,8 +316,8 @@ class TweetStats {
                 .array
                 .sort!((a, b) => a.value > b.value)
                 .take(10);
-            auto j = 0;
-            auto by_source_data = map!(source => process_source(source.key, source.value, j++))(top_sources);
+            auto by_source_data = top_sources.enumerate
+                .map!(source_pair => process_source(source_pair.value.key, source_pair.value.value, source_pair.index));
             context["by_source_data_" ~ period.keyword] = by_source_data.join(",\n");
         }
 
