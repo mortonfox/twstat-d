@@ -1,11 +1,11 @@
-import std.conv;
-import std.csv;
-import std.file;
-import std.getopt;
-import std.stdio;
-import std.zip;
+import std.conv : text;
+import std.csv : csvReader;
+import std.file : read;
+import std.getopt : getopt;
+import std.stdio : File, writeln, stderr;
+import std.zip : ZipArchive;
 import core.stdc.stdlib : exit;
-import tweetstats;
+import tweetstats : TweetStats, TweetRecord;
 
 enum OutputType { html, text };
 

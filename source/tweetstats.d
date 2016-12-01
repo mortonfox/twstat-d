@@ -1,15 +1,14 @@
-import std.algorithm.iteration;
-import std.algorithm.sorting;
-import std.array;
-import std.conv;
-import std.datetime;
-import std.format;
-import std.range;
-import std.regex;
-import std.stdio;
-import std.string;
-import std.uni;
-import mustache;
+import std.algorithm.iteration : map, filter;
+import std.algorithm.sorting : sort;
+import std.array : array, join;
+import std.conv : text;
+import std.datetime : DateTime, SysTime, days, Date, UTC;
+import std.format : formattedRead, format;
+import std.range : repeat, take;
+import std.regex : matchAll, replaceAll, split, ctRegex;
+import std.stdio : File, writef, stdout;
+import std.string : tr, toLower;
+import mustache : MustacheEngine;
 
 struct TweetRecord {
     string timestamp;
@@ -76,7 +75,7 @@ class TweetStats {
         ];
 
         auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
-        zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
+        zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime;
     }
 
     private static downames = [
@@ -102,7 +101,7 @@ class TweetStats {
             throw new Exception(text("Unrecognized timestamp format: ", timestamp));
 
         auto tsystime = new SysTime(DateTime(year, mon, day, hour, min, sec), UTC());
-        return cast(DateTime) tsystime.toLocalTime();
+        return cast(DateTime) tsystime.toLocalTime;
     }
 
     private const progress_interval = 5_000;
@@ -148,7 +147,7 @@ class TweetStats {
         foreach (ref period; count_defs) {
             if (tstamp < period.cutoff) continue;
 
-            period.count_by_dow[tstamp.dayOfWeek()] ++;
+            period.count_by_dow[tstamp.dayOfWeek] ++;
 
             if (tstamp >= zero_time_cutoff)
                 period.count_by_hour[tstamp.hour] ++;
@@ -165,7 +164,7 @@ class TweetStats {
 
     void report_text(ref File f) {
         void report_title(string title) {
-            f.writeln();
+            f.writeln;
             f.writeln(title);
             f.writeln(repeat('=', title.length));
         }
