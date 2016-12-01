@@ -188,29 +188,32 @@ class TweetStats {
 
         foreach (period; count_defs) {
             report_title(text("Top Mentions (", period.title, ")"));
-            foreach (user;
-                    period.count_by_mentions.keys
-                    .sort!((a, b) => period.count_by_mentions[a] > period.count_by_mentions[b])
+            foreach (mention;
+                    period.count_by_mentions.byKeyValue
+                    .array
+                    .sort!((a, b) => a.value > b.value)
                     .take(10))
-                f.writeln(user, ": ", period.count_by_mentions[user]);
+                f.writeln(mention.key, ": ", mention.value);
         }
 
         foreach (period; count_defs) {
             report_title(text("Top Clients (", period.title, ")"));
             foreach (source;
-                    period.count_by_source.keys
-                    .sort!((a, b) => period.count_by_source[a] > period.count_by_source[b])
+                    period.count_by_source.byKeyValue
+                    .array
+                    .sort!((a, b) => a.value > b.value)
                     .take(10))
-                f.writeln(source, ": ", period.count_by_source[source]);
+                f.writeln(source.key, ": ", source.value);
         }
 
         foreach (period; count_defs) {
             report_title(text("Top Words (", period.title, ")"));
             foreach (word;
-                    period.count_by_words.keys
-                    .sort!((a, b) => period.count_by_words[a] > period.count_by_words[b])
+                    period.count_by_words.byKeyValue
+                    .array
+                    .sort!((a, b) => a.value > b.value)
                     .take(20))
-                f.writeln(word, ": ", period.count_by_words[word]);
+                f.writeln(word.key, ": ", word.value);
         }
     } // report_text
 
