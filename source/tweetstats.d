@@ -42,7 +42,7 @@ class TweetStats {
 
     // Archive entries before this point all have 00:00:00 as the time, so don't
     // include them in the by-hour chart.
-    private DateTime zero_time_cutoff;
+    private static DateTime zero_time_cutoff;
 
     private DateTime oldest_tstamp;
     private DateTime newest_tstamp;
@@ -52,7 +52,32 @@ class TweetStats {
     private static strip_a_tag_regex = ctRegex!(`<a[^>]*>(.*)</a>`);
     private static word_split_regex = ctRegex!(`[^a-z0-9_']+`);
 
-    private int[string] common_words;
+    private static int[string] common_words;
+
+    static this() {
+	common_words = [
+	    "the" : 1, "and" : 1, "you" : 1, "that" : 1, "write" : 1,
+	    "was" : 1, "for" : 1, "are" : 1, "with" : 1, "his" : 1, "they" : 1,
+	    "this" : 1, "have" : 1, "from" : 1, "one" : 1, "had" : 1,
+	    "word" : 1, "but" : 1, "not" : 1, "what" : 1, "all" : 1, "were" : 1,
+	    "when" : 1, "your" : 1, "can" : 1, "said" : 1, "there" : 1,
+	    "use" : 1, "each" : 1, "which" : 1, "she" : 1, "how" : 1,
+	    "will" : 1, "other" : 1, "about" : 1, "out" : 1, "many" : 1,
+	    "then" : 1, "them" : 1, "these" : 1, "some" : 1, "her" : 1,
+	    "would" : 1, "make" : 1, "like" : 1, "him" : 1, "into" : 1,
+	    "time" : 1, "has" : 1, "look" : 1, "two" : 1, "more" : 1,
+	    "see" : 1, "number" : 1, "way" : 1, "could" : 1, "people" : 1,
+	    "than" : 1, "first" : 1, "water" : 1, "been" : 1, "call" : 1,
+	    "who" : 1, "oil" : 1, "its" : 1, "now" : 1, "find" : 1, "long" : 1,
+	    "down" : 1, "day" : 1, "did" : 1, "get" : 1, "come" : 1, "made" : 1,
+	    "may" : 1, "part" : 1, "http" : 1, "com" : 1, "net" : 1, "org" : 1,
+	    "www" : 1, "https" : 1, "it's" : 1, "too" : 1, "i'm" : 1,
+	    "i'll" : 1, "their" : 1
+	];
+
+	auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
+	zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
+    }
 
     private static downames = [
 	"Sunday", "Monday", "Tuesday", "Wednesday", 
@@ -63,23 +88,6 @@ class TweetStats {
 	count_defs = [
 	    PeriodInfo("all time", "alltime", 0),
 	    PeriodInfo("last 30 days", "last30", 30)
-	];
-
-	auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
-	zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime();
-
-	common_words = [
-	    "the" : 1, "and" : 1, "you" : 1, "that" : 1,
-	    "was" : 1, "for" : 1, "are" : 1, "with" : 1, "his" : 1, "they" : 1,
-	    "this" : 1, "have" : 1, "from" : 1, "one" : 1, "had" : 1, "word" : 1,
-	    "but" : 1, "not" : 1, "what" : 1, "all" : 1, "were" : 1, "when" : 1, "your" : 1, "can" : 1, "said" : 1,
-	    "there" : 1, "use" : 1, "each" : 1, "which" : 1, "she" : 1, "how" : 1, "their" : 1,
-	    "will" : 1, "other" : 1, "about" : 1, "out" : 1, "many" : 1, "then" : 1, "them" : 1, "these" : 1,
-	    "some" : 1, "her" : 1, "would" : 1, "make" : 1, "like" : 1, "him" : 1, "into" : 1, "time" : 1, "has" : 1, "look" : 1,
-	    "two" : 1, "more" : 1, "write" : 1, "see" : 1, "number" : 1, "way" : 1, "could" : 1, "people" : 1,
-	    "than" : 1, "first" : 1, "water" : 1, "been" : 1, "call" : 1, "who" : 1, "oil" : 1, "its" : 1, "now" : 1,
-	    "find" : 1, "long" : 1, "down" : 1, "day" : 1, "did" : 1, "get" : 1, "come" : 1, "made" : 1, "may" : 1, "part" : 1,
-	    "http" : 1, "com" : 1, "net" : 1, "org" : 1, "www" : 1, "https" : 1
 	];
     }
 
