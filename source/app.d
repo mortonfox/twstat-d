@@ -47,9 +47,10 @@ outfile:
 
     infile = args[1];
     outfile = args[2];
-}
+} // parse_cmdline
 
-TweetStats process_zipfile(string infile) {
+void process_zipfile(TweetStats tweetstats, string infile) {
+    // CSV file for tweets within the ZIP file.
     const tweets_file = "tweets.csv";
 
     try {
@@ -62,17 +63,12 @@ TweetStats process_zipfile(string infile) {
 	auto text = cast(char[]) zip.expand(zipdir[tweets_file]);
 	auto records = csvReader!TweetRecord(text, ["timestamp", "source", "text"]);
 
-	auto tweetstats = new TweetStats;
-
 	foreach (record; records)
 	    tweetstats.process_record(record);
-
-	return tweetstats;
     }
     catch (Exception e) {
 	stderr.writeln("Error processing ZIP file: ", e.msg);
 	exit(2);
-	assert(0);
     }
 } // process_zipfile
 
@@ -83,7 +79,9 @@ void main(string[] args) {
 
     parse_cmdline(args, output_type, infile, outfile);
 
-    auto tweetstats = process_zipfile(infile);
+    auto tweetstats = new TweetStats;
+
+    process_zipfile(tweetstats, infile);
 
     auto outf = File(outfile, "w");
     if (output_type == OutputType.html)
