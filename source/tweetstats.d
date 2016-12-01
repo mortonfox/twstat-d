@@ -83,8 +83,7 @@ class TweetStats {
     }
 
     private static downames = [
-        "Sunday", "Monday", "Tuesday", "Wednesday", 
-        "Thursday", "Friday", "Saturday"
+        "Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat"
     ];
 
     this() {
