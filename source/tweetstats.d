@@ -8,13 +8,10 @@ import std.range : repeat, take, enumerate;
 import std.regex : matchAll, replaceAll, split, ctRegex;
 import std.stdio : File, writef, stdout;
 import std.string : tr, toLower;
+import std.typecons : Tuple;
 import mustache : MustacheEngine;
 
-struct TweetRecord {
-    string timestamp;
-    string source;
-    string text;
-}
+alias TweetRecord = Tuple!(string, "timestamp", string, "source", string, "text");
 
 private struct PeriodInfo {
     string title;
