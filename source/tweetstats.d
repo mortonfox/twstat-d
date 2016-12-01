@@ -16,7 +16,7 @@ alias TweetRecord = Tuple!(string, "timestamp", string, "source", string, "text"
 private struct PeriodInfo {
     string title;
     string keyword;
-    int days;
+    int period_days;
     DateTime cutoff;
     int[7] count_by_dow;
     int[24] count_by_hour;
@@ -27,8 +27,15 @@ private struct PeriodInfo {
     this(string title, string keyword, int days) {
         this.title = title;
         this.keyword = keyword;
-        this.days = days;
+        period_days = days;
         cutoff = DateTime(1980, 1, 1);
+    }
+
+    // Calculate cutoff given the last/newest timestamp.
+    // If days == 0, don't set the cutoff because we want stats for all time.
+    void calc_cutoff(in DateTime last_tstamp) {
+        if (period_days)
+            cutoff = last_tstamp - days(period_days);
     }
 }
 
@@ -114,8 +121,7 @@ class TweetStats {
         if (row_count == 0) {
             newest_tstamp = tstamp;
             foreach (ref period; count_defs)
-                if (period.days)
-                    period.cutoff = newest_tstamp - days(period.days);
+                period.calc_cutoff(newest_tstamp);
         }
 
         oldest_tstamp = tstamp;
