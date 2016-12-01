@@ -294,44 +294,44 @@ class TweetStats {
             context["by_hour_data_" ~ period.keyword] = by_hour_data.join(",\n");
         }
 
-        auto process_mention(string user, in PeriodInfo period, int i) {
-            int count = period.count_by_mentions[user];
+        auto process_mention(string user, int count, int i) {
             return format("[ '@%s', %d, '%s' ]", user, count, colors[i % $]);
         }
 
         foreach (period; count_defs) {
-            auto users = period.count_by_mentions.keys
-                .sort!((a, b) => period.count_by_mentions[a] > period.count_by_mentions[b])
+            auto top_mentions = period.count_by_mentions.byKeyValue
+                .array
+                .sort!((a, b) => a.value > b.value)
                 .take(10);
             auto j = 0;
-            auto by_mention_data = map!(count => process_mention(count, period, j++))(users);
+            auto by_mention_data = map!(mention => process_mention(mention.key, mention.value, j++))(top_mentions);
             context["by_mention_data_" ~ period.keyword] = by_mention_data.join(",\n");
         }
 
-        auto process_source(string source, in PeriodInfo period, int i) {
-            int count = period.count_by_source[source];
+        auto process_source(string source, int count, int i) {
             return format("['%s', %d, '%s']", source, count, colors[i % $]);
         }
 
         foreach (period; count_defs) {
-            auto sources = period.count_by_source.keys
-                .sort!((a, b) => period.count_by_source[a] > period.count_by_source[b])
+            auto top_sources = period.count_by_source.byKeyValue
+                .array
+                .sort!((a, b) => a.value > b.value)
                 .take(10);
             auto j = 0;
-            auto by_source_data = map!(count => process_source(count, period, j++))(sources);
+            auto by_source_data = map!(source => process_source(source.key, source.value, j++))(top_sources);
             context["by_source_data_" ~ period.keyword] = by_source_data.join(",\n");
         }
 
-        auto process_words(string word, in PeriodInfo period) {
-            auto count = period.count_by_words[word];
+        auto process_words(string word, int count) {
             return format("{text: \"%s\", weight: %d}", word, count);
         }
 
         foreach (period; count_defs) {
-            auto words = period.count_by_words.keys
-                .sort!((a, b) => period.count_by_words[a] > period.count_by_words[b])
+            auto top_words = period.count_by_words.byKeyValue
+                .array
+                .sort!((a, b) => a.value > b.value)
                 .take(100);
-            auto by_words_data = map!(count => process_words(count, period))(words);
+            auto by_words_data = map!(word => process_words(word.key, word.value))(top_words);
             context["by_words_data_" ~ period.keyword] = by_words_data.join(",\n");
         }
 
