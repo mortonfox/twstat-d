@@ -27,22 +27,22 @@ outfile:
 ");
 
     try {
-	output_type = OutputType.html;
-	auto getoptResult = getopt(
-		args,
-		"output|o", "Set output type to html or text. (Default: html)", &output_type);
-	if (getoptResult.helpWanted) {
-	    writeln(helpmsg);
-	    exit(0);
-	}
+        output_type = OutputType.html;
+        auto getoptResult = getopt(
+                args,
+                "output|o", "Set output type to html or text. (Default: html)", &output_type);
+        if (getoptResult.helpWanted) {
+            writeln(helpmsg);
+            exit(0);
+        }
 
-	if (args.length < 3)
-	    throw new Exception("Filename arguments required");
+        if (args.length < 3)
+            throw new Exception("Filename arguments required");
     }
     catch (Exception e) {
-	stderr.writeln("Error: ", e.msg);
-	writeln(helpmsg);
-	exit(1);
+        stderr.writeln("Error: ", e.msg);
+        writeln(helpmsg);
+        exit(1);
     }
 
     infile = args[1];
@@ -54,21 +54,21 @@ void process_zipfile(TweetStats tweetstats, string infile) {
     const tweets_file = "tweets.csv";
 
     try {
-	auto zip = new ZipArchive(read(infile));
-	auto zipdir = zip.directory;
+        auto zip = new ZipArchive(read(infile));
+        auto zipdir = zip.directory;
 
-	if (tweets_file !in zipdir)
-	    throw new Exception(text(tweets_file, " was not found in ZIP file ", infile));
+        if (tweets_file !in zipdir)
+            throw new Exception(text(tweets_file, " was not found in ZIP file ", infile));
 
-	auto text = cast(char[]) zip.expand(zipdir[tweets_file]);
-	auto records = csvReader!TweetRecord(text, ["timestamp", "source", "text"]);
+        auto text = cast(char[]) zip.expand(zipdir[tweets_file]);
+        auto records = csvReader!TweetRecord(text, ["timestamp", "source", "text"]);
 
-	foreach (record; records)
-	    tweetstats.process_record(record);
+        foreach (record; records)
+            tweetstats.process_record(record);
     }
     catch (Exception e) {
-	stderr.writeln("Error processing ZIP file: ", e.msg);
-	exit(2);
+        stderr.writeln("Error processing ZIP file: ", e.msg);
+        exit(2);
     }
 } // process_zipfile
 
@@ -85,7 +85,7 @@ void main(string[] args) {
 
     auto outf = File(outfile, "w");
     if (output_type == OutputType.html)
-	tweetstats.report_html(outf);
+        tweetstats.report_html(outf);
     else
-	tweetstats.report_text(outf);
+        tweetstats.report_text(outf);
 }

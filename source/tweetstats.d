@@ -343,5 +343,3 @@ class TweetStats {
         f.rawWrite(mustache.renderString(templ, context));
     } // report_html
 } // class TweetStats
-
-// vim:set et:

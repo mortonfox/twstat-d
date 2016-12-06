@@ -181,52 +181,52 @@
           "use strict";
 
           draw_by_month(
-		  [ {{{by_month_data}}} ], 
-		  new Date({{by_month_min}}), 
-		  new Date({{by_month_max}})
+                  [ {{{by_month_data}}} ], 
+                  new Date({{by_month_min}}), 
+                  new Date({{by_month_max}})
           );
 
           draw_by_dow(
-		  [ {{{by_dow_data_alltime}}} ],
-		  "Tweets by Day of Week ({{title_alltime}})",
+                  [ {{{by_dow_data_alltime}}} ],
+                  "Tweets by Day of Week ({{title_alltime}})",
               "by_dow_alltime"
           );
           draw_by_dow(
-		  [ {{{by_dow_data_last30}}} ],
-		  "Tweets by Day of Week ({{title_last30}})",
+                  [ {{{by_dow_data_last30}}} ],
+                  "Tweets by Day of Week ({{title_last30}})",
               "by_dow_last30"
           );
 
           draw_by_hour(
-		  [ {{{by_hour_data_alltime}}} ],
-		  "Tweets by Hour ({{title_alltime}})",
+                  [ {{{by_hour_data_alltime}}} ],
+                  "Tweets by Hour ({{title_alltime}})",
               "by_hour_alltime"
           );
           draw_by_hour(
-		  [ {{{by_hour_data_last30}}} ],
-		  "Tweets by Hour ({{title_last30}})",
+                  [ {{{by_hour_data_last30}}} ],
+                  "Tweets by Hour ({{title_last30}})",
               "by_hour_last30"
           );
 
           draw_by_mention(
-		  [ {{{by_mention_data_alltime}}} ],
-		  "Top Mentions ({{title_alltime}})",
+                  [ {{{by_mention_data_alltime}}} ],
+                  "Top Mentions ({{title_alltime}})",
               "by_mention_alltime"
           );
           draw_by_mention(
-		  [ {{{by_mention_data_last30}}} ],
-		  "Top Mentions ({{title_last30}})",
+                  [ {{{by_mention_data_last30}}} ],
+                  "Top Mentions ({{title_last30}})",
               "by_mention_last30"
           );
 
           draw_by_mention(
-		  [ {{{by_source_data_alltime}}} ],
-		  "Top Clients ({{title_alltime}})",
+                  [ {{{by_source_data_alltime}}} ],
+                  "Top Clients ({{title_alltime}})",
               "by_source_alltime"
           );
           draw_by_mention(
-		  [ {{{by_source_data_last30}}} ],
-		  "Top Clients ({{title_last30}})",
+                  [ {{{by_source_data_last30}}} ],
+                  "Top Clients ({{title_last30}})",
               "by_source_last30"
           );
 
@@ -238,11 +238,11 @@
           "use strict";
 
           cloud_by_words(
-		  [ {{{by_words_data_alltime}}} ],
+                  [ {{{by_words_data_alltime}}} ],
               "by_words_alltime"
           );
           cloud_by_words(
-		  [ {{{by_words_data_last30}}} ],
+                  [ {{{by_words_data_last30}}} ],
               "by_words_last30"
           );
       });
@@ -259,7 +259,7 @@
     </div>
   </noscript>
 
-  <table>
+  <table summary="Main stats charts">
     <tr>
       <td colspan="2">
         <div id="by_month"></div>
@@ -300,7 +300,7 @@
     <tr>
       <td>
 
-        <table>
+        <table summary="Word cloud (all time)">
           <caption>Words (all time)</caption>
           <tr>
             <td>
@@ -312,7 +312,7 @@
       </td>
       <td>
 
-        <table>
+        <table summary="Word cloud (last 30 days)">
           <caption>Words (last 30 days)</caption>
           <tr>
             <td>
