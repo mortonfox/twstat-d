@@ -49,3 +49,5 @@ That will produce a twstat-d executable, which you may run as follows:
     twstat-d tweets.zip out.html
 
 Then view out.html in a web browser to see the charts.
+
+See a [sample output page](https://mortonfox.github.io/twstat-d/out.html).
