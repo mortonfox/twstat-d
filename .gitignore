@@ -4,3 +4,5 @@ __dummy.html
 *.o
 *.obj
 .*.sw?
+twstat-d
+dub.selections.json
