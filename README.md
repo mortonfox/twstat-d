@@ -52,3 +52,7 @@ That will produce a twstat-d executable, which you may run as follows:
 Then view out.html in a web browser to see the charts.
 
 See a [sample output page](https://mortonfox.github.io/twstat-d/out.html).
+
+Note: All timestamps in the Twitter archive are in UTC. For the Tweets by Hour
+chart, twstat-d uses the system configured timezone to convert those timestamps
+to local time.
