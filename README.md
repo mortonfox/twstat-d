@@ -30,7 +30,8 @@ twstat-d requires the
 package. DUB will automatically download and install this package on the
 first build.
 
-The web page that twstat-d generates references the following libraries from online sources:
+The web page that twstat-d generates references the following libraries from
+online sources:
 
 * jQuery (from [CDNJS](http://cdnjs.com/))
 * [jQCloud](https://github.com/lucaong/jQCloud) jQuery plugin (from [CDNJS](http://cdnjs.com/))
